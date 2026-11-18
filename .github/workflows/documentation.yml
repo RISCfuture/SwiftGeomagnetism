@@ -1,0 +1,80 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Documentation
+    # macOS: CoreLocation-gated public API is invisible on Linux.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: SwiftyLab/setup-swift@v1.14.2
+        with:
+          swift-version: "6.4"
+      - name: Cache SwiftPM build products
+        uses: actions/cache@v6.1.0
+        with:
+          path: |
+            .build
+            ~/.cache/org.swift.swiftpm
+            ~/Library/Caches/org.swift.swiftpm
+          key: swiftpm-docs-macos-26-swift6.4-${{ hashFiles('Package.resolved') }}
+      - name: Build documentation
+        run: |
+          swift package \
+            --allow-writing-to-directory ./docs \
+            generate-documentation \
+            --target SwiftGeomagnetism \
+            --target SwiftGeomagnetismHiRes \
+            --enable-experimental-combined-documentation \
+            --disable-indexing \
+            --transform-for-static-hosting \
+            --hosting-base-path SwiftGeomagnetism \
+            --output-path ./docs
+      - name: Create root redirect
+        run: |
+          cat > ./docs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta http-equiv="refresh" content="0; url=/SwiftGeomagnetism/documentation/">
+              <title>SwiftGeomagnetism Documentation</title>
+              <script>
+                  window.location.replace("/SwiftGeomagnetism/documentation/");
+              </script>
+          </head>
+          <body>
+              <p>Redirecting to <a href="/SwiftGeomagnetism/documentation/">SwiftGeomagnetism Documentation</a>...</p>
+          </body>
+          </html>
+          EOF
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: ./docs
+
+  deploy:
+    name: Deploy to GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5.0.1
