@@ -39,7 +39,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: SwiftyLab/setup-swift@v1.14.2
+      - uses: SwiftyLab/setup-swift@d60245579ea3836a3f2fa65ebbe1e8891d577c76  # v1.14.2
         with:
           swift-version: ${{ matrix.swift }}
       - name: Cache SwiftPM build products
@@ -104,7 +104,7 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: SwiftyLab/setup-swift@v1.14.2
+      - uses: SwiftyLab/setup-swift@d60245579ea3836a3f2fa65ebbe1e8891d577c76  # v1.14.2
         with:
           swift-version: "6.4"
       - name: Cache SwiftPM build products
